@@ -1,0 +1,2042 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>한만 | 인터페이스 아키텍트 & 엔지니어</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="애플 WWDC25에서 공개된 정통 Liquid Glass 디자인 규격을 구현합니다. 실시간 물리 굴절 엔진이 가미된 한만의 미니멀리즘 포트폴리오.">
+    <meta name="keywords" content="한만, 리퀴드 글래스, Liquid Glass, 굴절 디자인, 애플 UIUX, macOS Tahoe, iOS 26, feDisplacementMap, 크래프트맨십">
+    <meta name="author" content="한만">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="한만 | 인터페이스 아키텍트 & 엔지니어">
+    <meta property="og:description" content="나무위키 분석 기반의 SVG 실시간 액체 굴절 기술이 적용된 한만의 프로페셔널 포트폴리오.">
+    <meta property="og:image" content="avatar.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="한만 | 인터페이스 아키텍트 & 엔지니어">
+    <meta property="twitter:description" content="나무위키 분석 기반의 SVG 실시간 액체 굴절 기술이 적용된 한만의 프로페셔널 포트폴리오.">
+    <meta property="twitter:image" content="avatar.png">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* ==========================================
+           1. APPLE PRO SYSTEM & LIQUID VARIABLES
+           ========================================== */
+        :root {
+            /* Apple Pro Dark Theme */
+            --bg-primary: #020205;
+            --bg-secondary: #08080f;
+            --text-primary: #f5f5f7;
+            --text-secondary: #86868b;
+            --text-muted: #48484a;
+            
+            --accent: #2997ff;
+            --accent-light: #5ac8fa;
+            --accent-glow: rgba(41, 151, 255, 0.15);
+            
+            /* Milky frosted glass frame */
+            --glass-bg: rgba(120, 120, 128, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-border-light: rgba(255, 255, 255, 0.04);
+            --glass-highlight: rgba(255, 255, 255, 0.08);
+            --backdrop-blur: blur(40px) saturate(210%);
+            
+            /* Realistic inner & outer shadows */
+            --shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.4);
+            --shadow-deep: 0 30px 80px rgba(0, 0, 0, 0.6);
+            --shadow-inner: inset 0 1px 1px rgba(255, 255, 255, 0.08);
+            
+            /* High-fidelity liquid pigments */
+            --liquid-1: #4c1d95;
+            --liquid-2: #db2777;
+            --liquid-3: #0891b2;
+
+            --transition-fast: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            --transition-normal: 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            --transition-slow: 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        [data-theme="light"] {
+            /* Apple Pro Light Theme */
+            --bg-primary: #f5f5f7;
+            --bg-secondary: #ffffff;
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --text-muted: #aeaeb2;
+            
+            --accent: #0071e3;
+            --accent-light: #30b0c7;
+            --accent-glow: rgba(0, 113, 227, 0.06);
+            
+            /* Transparent frosted layout */
+            --glass-bg: rgba(255, 255, 255, 0.45);
+            --glass-border: rgba(0, 0, 0, 0.06);
+            --glass-border-light: rgba(0, 0, 0, 0.02);
+            --glass-highlight: rgba(255, 255, 255, 0.55);
+            --backdrop-blur: blur(40px) saturate(230%);
+            
+            --shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.04);
+            --shadow-deep: 0 30px 80px rgba(0, 0, 0, 0.07);
+            --shadow-inner: inset 0 1px 2px rgba(255, 255, 255, 0.6);
+            
+            --liquid-1: #c7d2fe;
+            --liquid-2: #fbcfe8;
+            --liquid-3: #cffafe;
+        }
+
+        /* ==========================================
+           2. BASE STYLES & TYPOGRAPHY
+           ========================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            font-size: 16px;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "SF Pro KR", "SF Pro Display", 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color var(--transition-normal), color var(--transition-normal);
+            overflow-x: hidden;
+            line-height: 1.55;
+            letter-spacing: -0.025em;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 700;
+            letter-spacing: -0.045em;
+            color: var(--text-primary);
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+            transition: color var(--transition-fast);
+        }
+
+        /* Fluid custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--glass-border);
+            border-radius: 20px;
+        }
+
+        ::selection {
+            background-color: var(--accent);
+            color: #ffffff;
+        }
+
+        /* ==========================================
+           3. ORGANIC DEEP LIQUID BACKGROUND
+           ========================================== */
+        .liquid-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: -2;
+        }
+
+        .liquid-orb {
+            position: absolute;
+            mix-blend-mode: screen;
+            filter: blur(80px);
+            opacity: 0.38;
+            animation: float-liquid 22s infinite alternate ease-in-out;
+            transition: background var(--transition-slow), transform var(--transition-slow);
+            will-change: transform;
+        }
+
+        [data-theme="light"] .liquid-orb {
+            mix-blend-mode: multiply;
+            opacity: 0.16;
+            filter: blur(100px);
+        }
+
+        .orb-1 {
+            width: 900px;
+            height: 900px;
+            background: radial-gradient(circle, var(--liquid-1) 0%, rgba(0,0,0,0) 70%);
+            top: -200px;
+            left: -200px;
+            animation-duration: 18s;
+        }
+
+        .orb-2 {
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, var(--liquid-2) 0%, rgba(0,0,0,0) 70%);
+            bottom: -200px;
+            right: -100px;
+            animation-duration: 26s;
+            animation-delay: -4s;
+        }
+
+        .orb-3 {
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, var(--liquid-3) 0%, rgba(0,0,0,0) 70%);
+            top: 35%;
+            left: 45%;
+            animation: morph-liquid 16s infinite alternate ease-in-out;
+            opacity: 0.25;
+        }
+
+        @keyframes float-liquid {
+            0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+            50% { transform: translate(100px, 80px) scale(1.1) rotate(180deg); }
+            100% { transform: translate(-80px, -120px) scale(0.9) rotate(360deg); }
+        }
+
+        @keyframes morph-liquid {
+            0% { border-radius: 40% 60% 70% 30% / 45% 45% 65% 55%; transform: scale(1); }
+            50% { border-radius: 65% 35% 50% 50% / 55% 45% 55% 45%; transform: scale(1.15); }
+            100% { border-radius: 35% 65% 35% 65% / 40% 60% 40% 60%; transform: scale(0.9); }
+        }
+
+        /* ==========================================
+           4. DYNAMIC LIQUID GLASS REFRACTION SYSTEM
+           ========================================== */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: var(--backdrop-blur);
+            -webkit-backdrop-filter: var(--backdrop-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px;
+            box-shadow: var(--shadow-soft), var(--shadow-inner);
+            position: relative;
+            overflow: hidden;
+            transition: all var(--transition-normal);
+            will-change: transform, box-shadow;
+        }
+
+        /* Real-time Liquid Refraction canvas layered underneath text */
+        .glass-fluid-bg {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+            opacity: 0.6;
+            transition: opacity var(--transition-normal);
+            /* Applying the SVG displacement filter globally to warp background graphics */
+            filter: url(#liquid-refraction);
+        }
+
+        .glass-panel:hover .glass-fluid-bg {
+            opacity: 0.95;
+        }
+
+        /* Distorted colorful blobs inside the card to simulate realistic thick glass */
+        .glass-fluid-orb {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--accent) 0%, rgba(255,255,255,0) 70%);
+            opacity: 0.25;
+            filter: blur(15px);
+            transition: transform var(--transition-normal), opacity var(--transition-normal);
+            will-change: transform;
+        }
+
+        .fo-1 {
+            top: -20px;
+            left: -20px;
+            background: radial-gradient(circle, var(--liquid-2) 0%, rgba(0,0,0,0) 70%);
+        }
+
+        .fo-2 {
+            bottom: -30px;
+            right: -30px;
+            background: radial-gradient(circle, var(--liquid-3) 0%, rgba(0,0,0,0) 70%);
+            opacity: 0.2;
+        }
+
+        /* Edge glow reflection */
+        .glass-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: inherit;
+            background: linear-gradient(135deg, var(--glass-highlight) 0%, rgba(255,255,255,0) 40%);
+            pointer-events: none;
+            transition: opacity var(--transition-normal);
+            opacity: 0.6;
+            z-index: 2;
+        }
+
+        .glass-panel:hover {
+            box-shadow: var(--shadow-deep), var(--shadow-inner);
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+
+        [data-theme="light"] .glass-panel:hover {
+            border-color: rgba(0, 0, 0, 0.12);
+        }
+
+        /* ==========================================
+           5. LAYOUT & CONTAINERS (SPATIAL GRID)
+           ========================================== */
+        .container {
+            width: 100%;
+            max-width: 1140px;
+            margin: 0 auto;
+            padding: 0 2.5rem;
+        }
+
+        .section {
+            padding: 11rem 0;
+            position: relative;
+        }
+
+        .section-header {
+            text-align: left;
+            margin-bottom: 6rem;
+            max-width: 800px;
+        }
+
+        .section-tag {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+
+        .section-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.05em;
+            color: var(--text-primary);
+        }
+
+        .section-desc {
+            color: var(--text-secondary);
+            margin-top: 1.5rem;
+            font-size: 1.3rem;
+            font-weight: 400;
+            line-height: 1.65;
+            letter-spacing: -0.02em;
+        }
+
+        /* ==========================================
+           6. NAV BAR (APPLE CHROMELESS)
+           ========================================== */
+        header {
+            position: fixed;
+            top: 2rem;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            transition: all var(--transition-normal);
+        }
+
+        header.scrolled {
+            top: 0;
+        }
+
+        header .nav-panel {
+            margin: 0 auto;
+            max-width: 980px;
+            width: 90%;
+            height: 3.5rem;
+            border-radius: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1.8rem;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: var(--backdrop-blur);
+            -webkit-backdrop-filter: var(--backdrop-blur);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3), var(--shadow-inner);
+            transition: all var(--transition-normal);
+        }
+
+        [data-theme="light"] header .nav-panel {
+            background: rgba(255, 255, 255, 0.45);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.04), var(--shadow-inner);
+            border-color: rgba(0, 0, 0, 0.04);
+        }
+
+        header.scrolled .nav-panel {
+            max-width: 100%;
+            width: 100%;
+            border-radius: 0;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            background: var(--glass-bg);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .logo {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            letter-spacing: -0.04em;
+        }
+
+        .logo i {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 3.2rem;
+        }
+
+        .nav-links a {
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: color var(--transition-fast);
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: var(--text-primary);
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+
+        .theme-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            transition: color var(--transition-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .theme-btn .fa-sun {
+            display: none;
+        }
+
+        [data-theme="light"] .theme-btn .fa-moon {
+            display: none;
+        }
+
+        [data-theme="light"] .theme-btn .fa-sun {
+            display: block;
+        }
+
+        .menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        /* ==========================================
+           7. PHILOSOPHICAL HERO SECTION
+           ========================================== */
+        #hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding-top: 8rem;
+            position: relative;
+        }
+
+        .hero-wrapper {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 5rem;
+            align-items: center;
+        }
+
+        .hero-content {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .hero-title {
+            font-size: 4.8rem;
+            line-height: 1.05;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            letter-spacing: -0.055em;
+        }
+
+        .hero-title span.liquid-text {
+            background: linear-gradient(135deg, var(--liquid-1) 0%, var(--liquid-2) 50%, var(--liquid-3) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .hero-desc {
+            font-size: 1.35rem;
+            color: var(--text-secondary);
+            margin-bottom: 4rem;
+            max-width: 600px;
+            font-weight: 400;
+            line-height: 1.65;
+            letter-spacing: -0.025em;
+        }
+
+        .hero-btns {
+            display: flex;
+            gap: 1.8rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.95rem 2.4rem;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            letter-spacing: -0.015em;
+        }
+
+        .btn-primary {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: none;
+            color: var(--accent);
+            border: none;
+            padding: 0.95rem 1rem;
+        }
+
+        .btn-secondary:hover {
+            text-decoration: underline;
+            transform: translateY(-2px);
+        }
+
+        /* Portrait glow panel */
+        .hero-img-panel {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .avatar-glow-ring {
+            position: relative;
+            border-radius: 50%;
+            padding: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: var(--shadow-deep);
+        }
+
+        .avatar-wrapper {
+            width: 320px;
+            height: 320px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: var(--bg-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .avatar-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(15%) contrast(105%);
+        }
+
+        .floating-badge {
+            position: absolute;
+            background: rgba(116, 116, 128, 0.05);
+            backdrop-filter: var(--backdrop-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 0.8rem 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            box-shadow: var(--shadow-soft), var(--shadow-inner);
+            animation: hover-float 5s ease-in-out infinite;
+            z-index: 10;
+        }
+
+        .fb-1 {
+            top: 8%;
+            left: -10%;
+            animation-delay: 0s;
+        }
+
+        .fb-2 {
+            bottom: 15%;
+            right: -8%;
+            animation-delay: 2.5s;
+        }
+
+        .floating-badge i {
+            font-size: 1.3rem;
+            color: var(--text-primary);
+        }
+
+        .floating-badge span {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        @keyframes hover-float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+            100% { transform: translateY(0); }
+        }
+
+        /* ==========================================
+           8. ABOUT ME SECTION (PHILOSOPHY & TIMELINE)
+           ========================================== */
+        .about-wrapper {
+            display: grid;
+            grid-template-columns: 0.95fr 1.05fr;
+            gap: 5rem;
+            align-items: start;
+        }
+
+        .about-card {
+            padding: 3.5rem;
+            z-index: 1;
+        }
+
+        .about-card h3, .skills-category h3, .contact-card h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .about-card p, .skills-category p {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+            line-height: 1.65;
+            font-weight: 400;
+            position: relative;
+            z-index: 2;
+        }
+
+        .about-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-top: 3rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--glass-border-light);
+            border-radius: 20px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow-inner);
+        }
+
+        .stat-num {
+            font-size: 2.6rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: -0.05em;
+        }
+
+        .stat-label {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-top: 0.6rem;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 2.2rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 5px;
+            width: 1px;
+            height: 98%;
+            background: var(--glass-border);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 3.5rem;
+        }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -2.55rem;
+            top: 7px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--bg-primary);
+            border: 2px solid var(--text-secondary);
+            transition: all var(--transition-fast);
+            z-index: 2;
+        }
+
+        .timeline-item:hover::before {
+            border-color: var(--text-primary);
+            background: var(--text-primary);
+            transform: scale(1.2);
+        }
+
+        .timeline-date {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.6rem;
+            letter-spacing: 0.02em;
+        }
+
+        .timeline-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.4rem;
+        }
+
+        .timeline-subtitle {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 1.2rem;
+        }
+
+        .timeline-desc {
+            color: var(--text-secondary);
+            font-size: 1.02rem;
+            line-height: 1.6;
+        }
+
+        /* ==========================================
+           9. SKILLS ARCHITECTURE
+           ========================================== */
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2.5rem;
+        }
+
+        .skills-category {
+            padding: 3.5rem 3rem;
+            z-index: 1;
+        }
+
+        .skills-cat-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 2.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            color: var(--text-primary);
+            position: relative;
+            z-index: 2;
+        }
+
+        .skills-cat-title i {
+            color: var(--text-primary);
+            font-size: 1.3rem;
+        }
+
+        .skill-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .skill-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .skill-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .skill-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .skill-percent {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+
+        .skill-track {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50px;
+            overflow: hidden;
+        }
+
+        [data-theme="light"] .skill-track {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        .skill-progress {
+            height: 100%;
+            border-radius: 50px;
+            background: var(--text-primary);
+            width: 0;
+            transition: width 2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* ==========================================
+           10. ARTWORK PORTFOLIO (CONCEPTUAL)
+           ========================================== */
+        .portfolio-filters {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 5.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.6rem 1.6rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            border-bottom: 2px solid transparent;
+        }
+
+        .filter-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .filter-btn.active {
+            color: var(--text-primary);
+            border-bottom-color: var(--text-primary);
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3.5rem;
+        }
+
+        .project-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .project-img-box {
+            position: relative;
+            aspect-ratio: 16/10;
+            overflow: hidden;
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .project-img-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform var(--transition-normal);
+        }
+
+        .project-card:hover .project-img-box img {
+            transform: scale(1.03);
+        }
+
+        /* frosted glass overlay */
+        .project-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+            z-index: 10;
+        }
+
+        .project-card:hover .project-overlay {
+            opacity: 1;
+        }
+
+        .project-icon-btn {
+            background: #ffffff;
+            color: #000000;
+            width: 3.2rem;
+            height: 3.2rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            transition: all var(--transition-fast);
+        }
+
+        .project-icon-btn:hover {
+            background: var(--accent);
+            color: #ffffff;
+        }
+
+        .project-info {
+            padding: 2.2rem 0.2rem 0.2rem 0.2rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .project-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .tag {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border: 1px solid var(--glass-border);
+            padding: 0.25rem 0.8rem;
+            border-radius: 50px;
+        }
+
+        .project-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            margin-bottom: 0.8rem;
+            color: var(--text-primary);
+        }
+
+        .project-desc {
+            color: var(--text-secondary);
+            font-size: 1.02rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            flex-grow: 1;
+        }
+
+        .project-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--glass-border-light);
+        }
+
+        .project-date {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .project-link {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .project-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Filter hide/show mechanical transition */
+        .project-card.hide {
+            display: none;
+        }
+
+        .project-card.show {
+            animation: appleReveal var(--transition-normal) forwards;
+        }
+
+        @keyframes appleReveal {
+            from { opacity: 0; transform: scale(0.95) translateY(12px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* ==========================================
+           11. CONTACT (CONVERSATION)
+           ========================================== */
+        .contact-wrapper {
+            display: grid;
+            grid-template-columns: 0.95fr 1.05fr;
+            gap: 5rem;
+            align-items: stretch;
+        }
+
+        .contact-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .contact-details {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .contact-icon {
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            color: var(--text-primary);
+        }
+
+        .contact-text-box h4 {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+        }
+
+        .contact-text-box p {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.03em;
+        }
+
+        .social-box h4 {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .social-btn {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            transition: color var(--transition-fast), transform var(--transition-fast);
+        }
+
+        .social-btn:hover {
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+
+        /* Glass Form panel */
+        .contact-card {
+            padding: 4rem;
+            z-index: 1;
+        }
+
+        .contact-form {
+            display: flex;
+            flex-direction: column;
+            gap: 2.2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .input-group {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-input {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            padding: 1.2rem;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 1.02rem;
+            outline: none;
+            box-shadow: var(--shadow-inner);
+            transition: all var(--transition-fast);
+        }
+
+        [data-theme="light"] .form-input {
+            background: rgba(0, 0, 0, 0.01);
+        }
+
+        .form-input:focus {
+            border-color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.03);
+            box-shadow: var(--shadow-inner);
+        }
+
+        textarea.form-input {
+            resize: none;
+            min-height: 150px;
+        }
+
+        .form-label {
+            position: absolute;
+            left: 1.2rem;
+            top: 1.2rem;
+            color: var(--text-secondary);
+            font-size: 1.02rem;
+            font-weight: 500;
+            pointer-events: none;
+            transition: all var(--transition-fast);
+        }
+
+        .form-input:focus ~ .form-label,
+        .form-input:not(:placeholder-shown) ~ .form-label {
+            top: -0.65rem;
+            left: 0.8rem;
+            font-size: 0.78rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            background-color: var(--bg-secondary);
+            padding: 0 0.4rem;
+            border-radius: 4px;
+        }
+
+        /* ==========================================
+           12. FOOTER
+           ========================================== */
+        footer {
+            background: var(--bg-primary);
+            padding: 5rem 0;
+            border-top: 1px solid var(--glass-border-light);
+            text-align: center;
+        }
+
+        footer .logo {
+            justify-content: center;
+            margin-bottom: 2.2rem;
+        }
+
+        footer p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        footer p span {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* ==========================================
+           13. SCROLL REVEAL (SPATIAL ANIMATION)
+           ========================================== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity var(--transition-slow), transform var(--transition-slow);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ==========================================
+           14. SUCCESS DIALOG
+           ========================================== */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(25px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-normal);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-box {
+            background: var(--glass-bg);
+            backdrop-filter: var(--backdrop-blur);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-deep), var(--shadow-inner);
+            border-radius: 32px;
+            padding: 4rem 3rem;
+            max-width: 440px;
+            width: 90%;
+            text-align: center;
+            transform: scale(0.92) translateY(20px);
+            transition: transform var(--transition-normal);
+        }
+
+        .modal-overlay.active .modal-box {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-icon {
+            font-size: 3rem;
+            color: var(--text-primary);
+            margin-bottom: 2rem;
+        }
+
+        .modal-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            letter-spacing: -0.04em;
+        }
+
+        .modal-desc {
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+
+        /* ==========================================
+           15. RESPONSIVE DESIGN (MEDIA QUERIES)
+           ========================================== */
+        @media (max-width: 1024px) {
+            html { font-size: 15px; }
+            .hero-wrapper { gap: 3rem; }
+            .hero-title { font-size: 4rem; }
+            .avatar-wrapper { width: 280px; height: 280px; }
+            .skills-grid { grid-template-columns: repeat(2, 1fr); }
+            .projects-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            html { font-size: 14px; }
+            .section { padding: 7rem 0; }
+            .section-title { font-size: 3rem; }
+            
+            /* Apple chromeless mobile navigation drawer */
+            .menu-btn { display: block; }
+            .nav-links {
+                position: fixed;
+                top: 6rem;
+                left: 100%;
+                width: 90%;
+                max-width: 300px;
+                height: auto;
+                padding: 3.5rem 2rem;
+                background: rgba(0, 0, 0, 0.88);
+                backdrop-filter: var(--backdrop-blur);
+                -webkit-backdrop-filter: var(--backdrop-blur);
+                border: 1px solid var(--glass-border);
+                border-radius: 28px;
+                flex-direction: column;
+                justify-content: center;
+                gap: 3rem;
+                box-shadow: var(--shadow-deep);
+                transition: left var(--transition-normal);
+            }
+            
+            [data-theme="light"] .nav-links {
+                background: rgba(255, 255, 255, 0.95);
+            }
+
+            .nav-links.active { left: calc(100% - 90% - 2rem); }
+            @media (min-width: 500px) {
+                .nav-links.active { left: calc(100% - 300px - 2rem); }
+            }
+            
+            /* Grid structures */
+            .hero-wrapper {
+                grid-template-columns: 1fr;
+                text-align: center;
+                gap: 5rem;
+            }
+            .hero-content { align-items: center; }
+            .hero-img-panel { order: -1; }
+            .floating-badge { display: none; }
+            
+            .about-wrapper { grid-template-columns: 1fr; gap: 4rem; }
+            .skills-grid { grid-template-columns: 1fr; }
+            .projects-grid { grid-template-columns: 1fr; }
+            
+            .contact-wrapper { grid-template-columns: 1fr; gap: 4rem; }
+            .contact-info { gap: 4rem; }
+        }
+
+        @media (max-width: 480px) {
+            .hero-title { font-size: 3.2rem; }
+            .avatar-wrapper { width: 240px; height: 240px; }
+            .btn { width: 100%; justify-content: center; }
+            .contact-card { padding: 3rem 2rem; }
+            .skills-category { padding: 3rem 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SVG PHYSICAL LIQUID GLASS REFRACTION ENGINE -->
+    <svg style="position: absolute; width: 0; height: 0; pointer-events: none;">
+        <defs>
+            <!-- SVG Liquid Refraction Filter (Warping backgrounds dynamically) -->
+            <filter id="liquid-refraction" x="-20%" y="-20%" width="140%" height="140%">
+                <!-- Fractal turbulence texture simulating fluid ripples -->
+                <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" result="noise">
+                    <!-- BaseFrequency animate to trigger fluid movement naturally -->
+                    <animate attributeName="baseFrequency" dur="25s" values="0.02;0.035;0.02" repeatCount="indefinite" />
+                </feTurbulence>
+                <!-- displacementMap physically morphs pixel channels under the glass -->
+                <feDisplacementMap id="liquid-disp-map" in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+        </defs>
+    </svg>
+
+    <!-- ORGANIC DEEP LIQUID BACKGROUND -->
+    <div class="liquid-bg">
+        <div class="liquid-orb orb-1"></div>
+        <div class="liquid-orb orb-2"></div>
+        <div class="liquid-orb orb-3"></div>
+    </div>
+
+    <!-- APPLE CHROMELESS NAV HEADER -->
+    <header id="header">
+        <div class="container">
+            <div class="nav-panel">
+                <a href="#hero" class="logo"><i class="fa-solid fa-circle" style="font-size: 0.5rem; color:var(--text-primary);"></i> 한만</a>
+                
+                <nav class="nav-links" id="nav-links">
+                    <a href="#hero" class="active">홈</a>
+                    <a href="#about">철학</a>
+                    <a href="#skills">기술</a>
+                    <a href="#projects">작품</a>
+                    <a href="#contact">연락</a>
+                </nav>
+
+                <div class="controls">
+                    <button class="theme-btn" id="theme-toggle" aria-label="화면 테마 전환">
+                        <i class="fa-solid fa-moon"></i>
+                        <i class="fa-solid fa-sun"></i>
+                    </button>
+                    <button class="menu-btn" id="menu-toggle" aria-label="메뉴 열기">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 1. PHILOSOPHICAL HERO SECTION -->
+    <section id="hero">
+        <div class="container hero-wrapper">
+            <div class="hero-content">
+                <h1 class="hero-title">복잡함을 덜어내고,<br>오직 <span class="liquid-text">본질에만</span><br>집중합니다.</h1>
+                <p class="hero-desc">인터페이스 아키텍트 한만입니다. 기술은 보이지 않아야 하며, 사용자는 오직 가치에만 집중해야 한다고 믿습니다. 엔지니어링과 인간 중심 디자인이 완벽히 조화를 이루는 감각적인 인터랙션을 조각합니다.</p>
+                <div class="hero-btns">
+                    <a href="#contact" class="btn btn-primary">대화 시작하기</a>
+                    <a href="#projects" class="btn btn-secondary">작품 아카이브 보기 <i class="fa-solid fa-chevron-right" style="font-size: 0.8rem;"></i></a>
+                </div>
+            </div>
+            
+            <div class="hero-img-panel">
+                <div class="avatar-glow-ring">
+                    <div class="avatar-wrapper">
+                        <!-- Portrait Grayscale Optimized -->
+                        <img src="avatar.png" alt="한만 프로필 이미지">
+                    </div>
+                </div>
+                <!-- Floating flags -->
+                <div class="floating-badge fb-1">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>인간 인터페이스</span>
+                </div>
+                <div class="floating-badge fb-2">
+                    <i class="fa-solid fa-bezier-curve"></i>
+                    <span>시스템 아키텍처</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. ABOUT ME SECTION (PHILOSOPHY & TIMELINE) -->
+    <section id="about" class="section reveal">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Philosophy</span>
+                <h2 class="section-title">타협 없는 크래프트맨십</h2>
+                <p class="section-desc">디자인은 어떻게 보이는가에 대한 것이 아닙니다. 어떻게 작동하는가에 대한 것입니다.</p>
+            </div>
+
+            <div class="about-wrapper">
+                <!-- Biography Glass Panel with active refraction layer -->
+                <div class="about-card glass-panel">
+                    <!-- Liquid refraction backing container -->
+                    <div class="glass-fluid-bg">
+                        <div class="glass-fluid-orb fo-1"></div>
+                        <div class="glass-fluid-orb fo-2"></div>
+                    </div>
+                    
+                    <h3>보이지 않는 디테일의 힘</h3>
+                    <p>코드를 작성하는 매 순간, 인터페이스의 반응 속도와 픽셀의 정렬, 성능의 한계를 넘어선 매끄러움을 추구합니다. 보이지 않는 뒷면의 구조까지 정갈하게 짜여 있을 때 비로소 진정한 사용자 경험의 무결성이 완성된다고 확신합니다.</p>
+                    <p>인간 인터페이스 지침(Human Interface Guidelines)을 준수하며, 디지털 매체 상에서 실제 물리적인 질감과 반응성을 재현하는 인터랙티브 엔지니어링에 매료되어 있습니다.</p>
+                    
+                    <div class="about-stats">
+                        <div class="stat-item">
+                            <div class="stat-num">3</div>
+                            <div class="stat-label">개념 예술 프로젝트</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-num">60fps</div>
+                            <div class="stat-label">타협 없는 모션 프레임</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Experience Timeline -->
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-date">2024 - 현재</div>
+                        <h4 class="timeline-title">독립 인터페이스 아키텍트 (Interface Architect)</h4>
+                        <p class="timeline-subtitle">기술 혁신 기업 대상 UIUX 및 분산 아키텍처 컨설팅</p>
+                        <p class="timeline-desc">Next.js 및 하드웨어 가속 웹 그래픽스를 결합하여 기업들의 핵심 인터페이스 프로토타입 설계. 클라이언트 상태 동기화 및 렌더 가속 시스템 통합 설계 제공.</p>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-date">2022 - 2024</div>
+                        <h4 class="timeline-title">수석 인간 인터페이스 엔지니어 (Human Interface Engineer)</h4>
+                        <p class="timeline-subtitle">SaaS 컴포넌트 프레임워크 그룹</p>
+                        <p class="timeline-desc">대규모 금융 데이터 가시성 확보 프로젝트 총괄. 인터렉션 마이크로 모션 표준 수립 및 초기 로드 성능 30% 개선, 프레임 드랍 최소화 가이드 구축.</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-date">2020 - 2022</div>
+                        <h4 class="timeline-title">인터랙티브 웹 디벨로퍼 (Interactive Web Developer)</h4>
+                        <p class="timeline-subtitle">디지털 아트 & 크리에이티브 스튜디오</p>
+                        <p class="timeline-desc">브라우저 상에서 구동되는 물리 엔진 및 시뮬레이션 기반 아트 쇼케이스 15종 제작. WebGL 및 CSS 3D 기술의 융합 구현 스페셜리스트.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. SKILLS ARCHITECTURE -->
+    <section id="skills" class="section reveal">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Architecture</span>
+                <h2 class="section-title">전문성 매트릭스</h2>
+                <p class="section-desc">인터페이스의 예술적 구현과 견고한 비즈니스 뼈대를 견인하는 기술적 깊이입니다.</p>
+            </div>
+
+            <div class="skills-grid">
+                <!-- 1. Frontend Skills -->
+                <div class="skills-category glass-panel">
+                    <div class="glass-fluid-bg">
+                        <div class="glass-fluid-orb fo-1"></div>
+                        <div class="glass-fluid-orb fo-2"></div>
+                    </div>
+                    <h3 class="skills-cat-title"><i class="fa-solid fa-wand-magic-sparkles"></i> 인터페이스 공학</h3>
+                    <div class="skill-list">
+                        <div class="skill-item">
+                            <div class="skill-info">
+                                <span class="skill-name">React / Next.js (Rendering Opt)</span>
+                                <span class="skill-percent">95%</span>
+                            </div>
+                            <div class="skill-track"><div class="skill-progress" data-width="95%"></div></div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-info">
+                                <span class="skill-name">Pure CSS / Web Motion Dynamics</span>
+                                <span class="skill-percent">90%</span>
+                            </div>
+                            <div class="skill-track"><div class="skill-progress" data-width="90%"></div></div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-info">
+                                <span class="skill-name">TypeScript (Strict Mode)</span>
+                                <span class="skill-percent">88%</span>
+                            </div>
+                            <div class="skill-track"><div class="skill-progress" data-width="88%"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Backend Skills -->
+                <div class="skills-category glass-panel">
+                    <div class="glass-fluid-bg">
+                        <div class="glass-fluid-orb fo-1"></div>
+                        <div class="glass-fluid-orb fo-2"></div>
+                    </div>
+                    <h3 class="skills-cat-title"><i class="fa-solid fa-bezier-curve"></i> 백엔드 아키텍처</h3>
+                    <div class="skill-list">
+                        <div class="skill-item">
+                            <div class="skill-info">
+                                <span class="skill-name">Node.js (NestJS / Modular Architecture)</span>
+                                <span class="skill-percent">85%</span>
+                            </div>
+                            <div class="skill-track"><div class="skill-progress" data-width="85%"></div></div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-info">
+                                <span class="skill-name">Systems Sync (REST / Real-time GraphQL)</span>
+                                <span class="skill-percent">88%</span>
+                            </div>
+                            <div class="skill-track"><div class="skill-progress" data-width="88%"></div></div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-info">
+                                <span class="skill-name">Relational PostgreSQL & Redis Sync</span>
+                                <span class="skill-percent">82%</span>
+                            </div>
+                            <div class="skill-track"><div class="skill-progress" data-width="82%"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. DevOps & Tools -->
+                <div class="skills-category glass-panel">
+                    <div class="glass-fluid-bg">
+                        <div class="glass-fluid-orb fo-1"></div>
+                        <div class="glass-fluid-orb fo-2"></div>
+                    </div>
+                    <h3 class="skills-cat-title"><i class="fa-solid fa-eye"></i> 도구 & 크래프트</h3>
+                    <div class="skill-list">
+                        <div class="skill-item">
+                            <div class="skill-info">
+                                <span class="skill-name">Figma Design System Engineering</span>
+                                <span class="skill-percent">90%</span>
+                            </div>
+                            <div class="skill-track"><div class="skill-progress" data-width="90%"></div></div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-info">
+                                <span class="skill-name">High-Fidelity Interaction Prototype</span>
+                                <span class="skill-percent">85%</span>
+                            </div>
+                            <div class="skill-track"><div class="skill-progress" data-width="85%"></div></div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-info">
+                                <span class="skill-name">Performance Profiling (FPS & memory)</span>
+                                <span class="skill-percent">80%</span>
+                            </div>
+                            <div class="skill-track"><div class="skill-progress" data-width="80%"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. ARTWORK PORTFOLIO (CONCEPTUAL) -->
+    <section id="projects" class="section reveal">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Works</span>
+                <h2 class="section-title">작품 아카이브</h2>
+                <p class="section-desc">엔지니어링의 정밀함과 예술적 집착이 빚어낸 핵심 쇼케이스입니다.</p>
+            </div>
+
+            <!-- apple text filters -->
+            <div class="portfolio-filters">
+                <button class="filter-btn active" data-filter="all">모든 작품</button>
+                <button class="filter-btn" data-filter="frontend">인터페이스</button>
+                <button class="filter-btn" data-filter="fullstack">엔지니어링</button>
+                <button class="filter-btn" data-filter="others">디자인 시스템</button>
+            </div>
+
+            <!-- Projects Grid -->
+            <div class="projects-grid">
+                <!-- Project 1 (Aether UI) -->
+                <div class="project-card" data-category="frontend">
+                    <div class="project-img-box">
+                        <div style="width:100%; height:100%; background: linear-gradient(135deg, #050508 0%, #15091a 100%); display:flex; justify-content:center; align-items:center; color: #a1a1a6;">
+                            <i class="fa-solid fa-compass-drafting fa-4x"></i>
+                        </div>
+                        <div class="project-overlay">
+                            <a href="#" class="project-icon-btn" aria-label="깃허브 저장소"><i class="fa-brands fa-github"></i></a>
+                            <a href="#" class="project-icon-btn" aria-label="작동 라이브 보기"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                        </div>
+                    </div>
+                    <div class="project-info">
+                        <div class="project-tags">
+                            <span class="tag">Interface Core</span>
+                            <span class="tag">Physics Motion</span>
+                            <span class="tag">TypeScript</span>
+                        </div>
+                        <h3 class="project-title">Aether (에테르 UI)</h3>
+                        <p class="project-desc">유동적인 자연 모션의 마우스 반사 관성을 구현하기 위해 제작된 물리 엔진 기반 초경량 크래프트 UI 라이브러리 엔진입니다.</p>
+                        <div class="project-footer">
+                            <span class="project-date">2024</span>
+                            <a href="#" class="project-link">에테르 탐구 <i class="fa-solid fa-chevron-right" style="font-size:0.75rem;"></i></a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 2 (Chronos Engine) -->
+                <div class="project-card" data-category="fullstack">
+                    <div class="project-img-box">
+                        <div style="width:100%; height:100%; background: linear-gradient(135deg, #070913 0%, #0d122e 100%); display:flex; justify-content:center; align-items:center; color: #a1a1a6;">
+                            <i class="fa-solid fa-microchip fa-4x"></i>
+                        </div>
+                        <div class="project-overlay">
+                            <a href="#" class="project-icon-btn" aria-label="깃허브 저장소"><i class="fa-brands fa-github"></i></a>
+                            <a href="#" class="project-icon-btn" aria-label="아키텍처 스펙 보기"><i class="fa-solid fa-book-open"></i></a>
+                        </div>
+                    </div>
+                    <div class="project-info">
+                        <div class="project-tags">
+                            <span class="tag">Systems Engine</span>
+                            <span class="tag">Real-time Node</span>
+                            <span class="tag">Redis Sync</span>
+                        </div>
+                        <h3 class="project-title">Chronos (크로노스 동기화 엔진)</h3>
+                        <p class="project-desc">분산 처리 노드 간 데이터 정합성을 밀리초 단위 이하로 즉각 조율하는 지연율 제로 지향 초고성능 클라이언트 실시간 동기화 아키텍처입니다.</p>
+                        <div class="project-footer">
+                            <span class="project-date">2023</span>
+                            <a href="#" class="project-link">크로노스 탐구 <i class="fa-solid fa-chevron-right" style="font-size:0.75rem;"></i></a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 3 (Lumen Studio) -->
+                <div class="project-card" data-category="others">
+                    <div class="project-img-box">
+                        <div style="width:100%; height:100%; background: linear-gradient(135deg, #080c10 0%, #1a1e24 100%); display:flex; justify-content:center; align-items:center; color: #a1a1a6;">
+                            <i class="fa-solid fa-lightbulb fa-4x"></i>
+                        </div>
+                        <div class="project-overlay">
+                            <a href="#" class="project-icon-btn" aria-label="피그마 디자인 가이드"><i class="fa-brands fa-figma"></i></a>
+                            <a href="#" class="project-icon-btn" aria-label="작동 쇼케이스 보기"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                        </div>
+                    </div>
+                    <div class="project-info">
+                        <div class="project-tags">
+                            <span class="tag">Figma Integration</span>
+                            <span class="tag">Web Graphic</span>
+                            <span class="tag">Lumen Calc</span>
+                        </div>
+                        <h3 class="project-title">Lumen (루멘 스튜디오)</h3>
+                        <p class="project-desc">웹 표준 렌더 파이프라인에서 광학적 물체 표면 질감과 다이내믹 반사 그림자의 깊이를 감각적으로 구현하는 가상 램프 조명 저작 시뮬레이터입니다.</p>
+                        <div class="project-footer">
+                            <span class="project-date">2023</span>
+                            <a href="#" class="project-link">루멘 탐구 <i class="fa-solid fa-chevron-right" style="font-size:0.75rem;"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. CONTACT SECTION (CONVERSATION) -->
+    <section id="contact" class="section reveal">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Conversation</span>
+                <h2 class="section-title">관점을 나누는 대화</h2>
+                <p class="section-desc">단순한 어플리케이션 구축을 넘어, 인터페이스의 새로운 패러다임을 함께 구축할 파트너십을 환영합니다.</p>
+            </div>
+
+            <div class="contact-wrapper">
+                <div class="contact-info">
+                    <div class="contact-details">
+                        <div class="contact-item">
+                            <div class="contact-icon"><i class="fa-solid fa-envelope"></i></div>
+                            <div class="contact-text-box">
+                                <h4>Direct Email</h4>
+                                <p>hanman@example.com</p>
+                            </div>
+                        </div>
+
+                        <div class="contact-item">
+                            <div class="contact-icon"><i class="fa-solid fa-phone"></i></div>
+                            <div class="contact-text-box">
+                                <h4>Hotline</h4>
+                                <p>+82 10-1234-5678</p>
+                            </div>
+                        </div>
+
+                        <div class="contact-item">
+                            <div class="contact-icon"><i class="fa-solid fa-location-dot"></i></div>
+                            <div class="contact-text-box">
+                                <h4>Base Location</h4>
+                                <p>대한민국 서울특별시 강남구</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="social-box">
+                        <h4>Social Networks</h4>
+                        <div class="social-links">
+                            <a href="#" class="social-btn" aria-label="깃허브 프로필"><i class="fa-brands fa-github"></i></a>
+                            <a href="#" class="social-btn" aria-label="링크드인 비즈니스 프로필"><i class="fa-brands fa-linkedin-in"></i></a>
+                            <a href="#" class="social-btn" aria-label="트위터 프로필"><i class="fa-brands fa-twitter"></i></a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Glass form card with active liquid layer -->
+                <div class="contact-card glass-panel">
+                    <div class="glass-fluid-bg">
+                        <div class="glass-fluid-orb fo-1"></div>
+                        <div class="glass-fluid-orb fo-2"></div>
+                    </div>
+                    
+                    <form class="contact-form" id="contact-form" action="#" method="POST">
+                        <div class="input-group">
+                            <input type="text" class="form-input" id="name" placeholder=" " required>
+                            <label for="name" class="form-label">성함</label>
+                        </div>
+                        <div class="input-group">
+                            <input type="email" class="form-input" id="email" placeholder=" " required>
+                            <label for="email" class="form-label">이메일 주소</label>
+                        </div>
+                        <div class="input-group">
+                            <textarea class="form-input" id="message" placeholder=" " required></textarea>
+                            <label for="message" class="form-label">나누고 싶으신 대화의 의제와 방향성</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="justify-content:center; padding: 1.15rem 0; position:relative; z-index:2;">세션 요청하기</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="container">
+            <a href="#hero" class="logo"><i class="fa-solid fa-circle" style="font-size: 0.5rem; color:var(--text-primary);"></i> 한만</a>
+            <p>&copy; 2026 <span>한만</span>. 복잡함을 비워내고 예술을 구현합니다.</p>
+        </div>
+    </footer>
+
+    <!-- APPLE SUCCESS DIALOG -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-icon">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h3 class="modal-title">세션 요청 접수 완료</h3>
+            <p class="modal-desc">전달해 주신 의제와 방향성을 면밀히 파악했습니다. 인터페이스의 시너지를 그릴 대화 세션을 위해 기재해 주신 메일로 신속히 답변을 발송하겠습니다.</p>
+            <button class="btn btn-primary" id="modal-close" style="width:100%; justify-content:center;">완료</button>
+        </div>
+    </div>
+
+    <!-- HIGH-PERFORMANCE LIQUID GLASS CONTROLLER -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const header = document.getElementById('header');
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const menuToggleBtn = document.getElementById('menu-toggle');
+            const navLinksContainer = document.getElementById('nav-links');
+            const navLinks = document.querySelectorAll('.nav-links a');
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const projectCards = document.querySelectorAll('.project-card');
+            const contactForm = document.getElementById('contact-form');
+            const modalOverlay = document.getElementById('modal-overlay');
+            const modalCloseBtn = document.getElementById('modal-close');
+            
+            // Header scroll effects
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 40) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+
+                // Scrollspy
+                let current = '';
+                const sections = document.querySelectorAll('section, header');
+                
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (window.scrollY >= (sectionTop - 250)) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').slice(1) === current) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+
+            // Mobile menu toggling drawer
+            menuToggleBtn.addEventListener('click', () => {
+                navLinksContainer.classList.toggle('active');
+                const menuIcon = menuToggleBtn.querySelector('i');
+                if(navLinksContainer.classList.contains('active')) {
+                    menuIcon.className = 'fa-solid fa-xmark';
+                } else {
+                    menuIcon.className = 'fa-solid fa-bars';
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    navLinksContainer.classList.remove('active');
+                    menuToggleBtn.querySelector('i').className = 'fa-solid fa-bars';
+                });
+            });
+
+            // Apple Dark Theme Control
+            const savedTheme = localStorage.getItem('theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedTheme === 'light' || (!savedTheme && !systemPrefersDark)) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+
+            themeToggleBtn.addEventListener('click', () => {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                document.documentElement.setAttribute('data-theme', nextTheme);
+                localStorage.setItem('theme', nextTheme);
+            });
+
+            // Spatial reveal
+            const revealElements = document.querySelectorAll('.reveal');
+            
+            const revealObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        if (entry.target.id === 'skills') {
+                            animateSkills();
+                        }
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, {
+                threshold: 0.15
+            });
+
+            revealElements.forEach(el => revealObserver.observe(el));
+
+            // Skill gauges
+            function animateSkills() {
+                const progressBars = document.querySelectorAll('.skill-progress');
+                progressBars.forEach(bar => {
+                    const width = bar.getAttribute('data-width');
+                    bar.style.width = width;
+                });
+            }
+
+            // Filtering
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    const filterValue = btn.getAttribute('data-filter');
+
+                    projectCards.forEach(card => {
+                        card.classList.remove('show');
+                        card.classList.add('hide');
+
+                        if (filterValue === 'all' || card.getAttribute('data-category') === filterValue) {
+                            setTimeout(() => {
+                                card.classList.remove('hide');
+                                card.classList.add('show');
+                            }, 50);
+                        }
+                    });
+                });
+            });
+
+            projectCards.forEach(card => {
+                card.classList.add('show');
+            });
+
+            // Contact session submit
+            contactForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = document.getElementById('name').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const message = document.getElementById('message').value.trim();
+
+                if (name && email && message) {
+                    const submitBtn = contactForm.querySelector('button[type="submit"]');
+                    const originalBtnContent = submitBtn.innerHTML;
+                    
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> 세션 세팅 중...';
+                    
+                    setTimeout(() => {
+                        modalOverlay.classList.add('active');
+                        contactForm.reset();
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalBtnContent;
+                    }, 1400);
+                }
+            });
+
+            modalCloseBtn.addEventListener('click', () => {
+                modalOverlay.classList.remove('active');
+            });
+
+            modalOverlay.addEventListener('click', (e) => {
+                if (e.target === modalOverlay) {
+                    modalOverlay.classList.remove('active');
+                }
+            });
+
+            // =======================================================
+            // 16. LIQUID GLASS PHYSICAL REFRACTION SPRING PHYSICS
+            // =======================================================
+            let currentScale = 0;
+            let targetScale = 0;
+            const springStrength = 0.12; // Spring interpolation rate
+
+            // Tracking the active card hover to warp sub-elements
+            const glassPanels = document.querySelectorAll('.glass-panel');
+            
+            glassPanels.forEach(panel => {
+                panel.addEventListener('mouseenter', () => {
+                    targetScale = 38; // Target displacement amplitude (pixel warp)
+                });
+                
+                panel.addEventListener('mousemove', (e) => {
+                    // Micro-shift fluid orbs under the cursor for volumetric parallax
+                    const rect = panel.getBoundingClientRect();
+                    const x = e.clientX - rect.left - (rect.width / 2);
+                    const y = e.clientY - rect.top - (rect.height / 2);
+                    
+                    const orbs = panel.querySelectorAll('.glass-fluid-orb');
+                    orbs.forEach((orb, index) => {
+                        const factor = (index + 1) * 0.08;
+                        orb.style.transform = `translate(${x * factor}px, ${y * factor}px)`;
+                    });
+                });
+
+                panel.addEventListener('mouseleave', () => {
+                    targetScale = 0; // Return displacement map to flat plane
+                    const orbs = panel.querySelectorAll('.glass-fluid-orb');
+                    orbs.forEach(orb => {
+                        orb.style.transform = 'translate(0px, 0px)';
+                    });
+                });
+            });
+
+            // Buttery-smooth animation loop updating displacement scale at 60fps
+            function animateDisplacement() {
+                // Spring calculation
+                currentScale += (targetScale - currentScale) * springStrength;
+                
+                const dispMap = document.getElementById('liquid-disp-map');
+                if (dispMap) {
+                    // Crucial: Set SVG attribute to trigger GPU refraction recalculation
+                    dispMap.setAttribute('scale', Math.round(currentScale * 100) / 100);
+                }
+                
+                requestAnimationFrame(animateDisplacement);
+            }
+            requestAnimationFrame(animateDisplacement);
+        });
+    </script>
+</body>
+</html>
