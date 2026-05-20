@@ -227,11 +227,41 @@
             -webkit-backdrop-filter: var(--backdrop-blur);
             border: 1px solid var(--glass-border);
             border-radius: 32px;
-            box-shadow: var(--shadow-soft), var(--shadow-inner);
+            /* Multi-layered shadows for realistic polished thick crystal chamfered glass */
+            box-shadow: 
+                var(--shadow-soft), 
+                var(--shadow-inner),
+                inset 0 20px 40px rgba(255, 255, 255, 0.03),
+                inset 0 -20px 40px rgba(0, 0, 0, 0.2);
             position: relative;
             overflow: hidden;
-            transition: all var(--transition-normal);
+            transition: border-color var(--transition-normal), box-shadow var(--transition-normal), transform var(--transition-normal);
             will-change: transform, box-shadow;
+        }
+
+        [data-theme="light"] .glass-panel {
+            box-shadow: 
+                var(--shadow-soft), 
+                var(--shadow-inner),
+                inset 0 20px 40px rgba(255, 255, 255, 0.45),
+                inset 0 -20px 40px rgba(0, 0, 0, 0.02);
+        }
+
+        /* 3D Glass chamfered polished edge overlay using pseudo-element */
+        .glass-panel::after {
+            content: '';
+            position: absolute;
+            top: 1px; left: 1px; right: 1px; bottom: 1px;
+            border-radius: 31px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            pointer-events: none;
+            z-index: 3;
+            transition: opacity var(--transition-normal);
+            opacity: 0.8;
+        }
+
+        [data-theme="light"] .glass-panel::after {
+            border-color: rgba(0, 0, 0, 0.03);
         }
 
         /* Real-time Liquid Refraction canvas layered underneath text */
@@ -242,7 +272,7 @@
             pointer-events: none;
             overflow: hidden;
             opacity: 0.6;
-            transition: opacity var(--transition-normal);
+            transition: opacity var(--transition-normal), transform var(--transition-normal);
             /* Applying the SVG displacement filter globally to warp background graphics */
             filter: url(#liquid-refraction);
         }
@@ -291,12 +321,108 @@
         }
 
         .glass-panel:hover {
-            box-shadow: var(--shadow-deep), var(--shadow-inner);
+            box-shadow: 
+                var(--shadow-deep), 
+                var(--shadow-inner),
+                inset 0 20px 40px rgba(255, 255, 255, 0.05),
+                inset 0 -20px 40px rgba(0, 0, 0, 0.25);
             border-color: rgba(255, 255, 255, 0.18);
         }
 
         [data-theme="light"] .glass-panel:hover {
+            box-shadow: 
+                var(--shadow-deep), 
+                var(--shadow-inner),
+                inset 0 20px 40px rgba(255, 255, 255, 0.6),
+                inset 0 -20px 40px rgba(0, 0, 0, 0.01);
             border-color: rgba(0, 0, 0, 0.12);
+        }
+
+        /* Dynamic Interactive Glass Spotlight Shine */
+        .glass-shine-spotlight {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(400px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255, 255, 255, 0.08), transparent 60%);
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        [data-theme="light"] .glass-shine-spotlight {
+            background: radial-gradient(400px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255, 255, 255, 0.75), transparent 60%);
+        }
+
+        .glass-panel:hover .glass-shine-spotlight {
+            opacity: 1;
+        }
+
+        /* CUSTOM LIQUID GOOEY CURSOR */
+        .cursor-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 99999;
+            filter: url(#gooey-cursor);
+            will-change: filter;
+        }
+
+        .cursor-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--text-primary);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            will-change: transform;
+            pointer-events: none;
+        }
+
+        .cursor-fluid {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            will-change: transform;
+            opacity: 0.85;
+            pointer-events: none;
+            transition: background var(--transition-fast), width var(--transition-fast), height var(--transition-fast), opacity var(--transition-fast);
+        }
+
+        /* Magnetic snaps on hovering items */
+        .cursor-container.magnetic {
+            filter: none; /* Bypass gooey during snap for perfect sharpness */
+        }
+
+        .cursor-container.magnetic .cursor-dot {
+            opacity: 0;
+        }
+
+        .cursor-container.magnetic .cursor-fluid {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            opacity: 1;
+        }
+
+        [data-theme="light"] .cursor-container.magnetic .cursor-fluid {
+            background: rgba(0, 0, 0, 0.05);
+            border-color: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        /* Hide cursor defaults globally on non-touch screens */
+        @media (pointer: fine) {
+            body, a, button, input, textarea, .glass-panel, .theme-btn, .menu-btn {
+                cursor: none !important;
+            }
         }
 
         /* ==========================================
@@ -914,17 +1040,148 @@
             border-radius: 24px;
             border: 1px solid var(--glass-border);
             box-shadow: var(--shadow-soft);
+            z-index: 1;
         }
 
-        .project-img-box img {
+        /* Interactive Canvas Artwork */
+        .project-canvas {
             width: 100%;
             height: 100%;
-            object-fit: cover;
-            transition: transform var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background var(--transition-normal);
         }
 
-        .project-card:hover .project-img-box img {
-            transform: scale(1.03);
+        .canvas-aether {
+            background: linear-gradient(135deg, #06060c 0%, #170d24 100%);
+        }
+        [data-theme="light"] .canvas-aether {
+            background: linear-gradient(135deg, #f0f0f5 0%, #e6d5fa 100%);
+        }
+
+        .canvas-chronos {
+            background: linear-gradient(135deg, #040812 0%, #0d1a3c 100%);
+        }
+        [data-theme="light"] .canvas-chronos {
+            background: linear-gradient(135deg, #edf2fc 0%, #d5e4fa 100%);
+        }
+
+        .canvas-lumen {
+            background: linear-gradient(135deg, #05090d 0%, #182333 100%);
+        }
+        [data-theme="light"] .canvas-lumen {
+            background: linear-gradient(135deg, #eef5fa 0%, #d5e9fa 100%);
+        }
+
+        .iconic-label {
+            position: relative;
+            z-index: 5;
+            color: var(--text-primary);
+            opacity: 0.7;
+            transform: scale(1);
+            transition: transform var(--transition-normal), opacity var(--transition-normal);
+        }
+
+        .project-card:hover .iconic-label {
+            transform: scale(1.15);
+            opacity: 1;
+        }
+
+        /* Aether Fluid Blob */
+        .fluid-blob {
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            background: linear-gradient(135deg, var(--liquid-2) 0%, var(--liquid-1) 100%);
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+            opacity: 0.35;
+            filter: blur(10px);
+            animation: morph-blob 8s infinite alternate ease-in-out;
+            transition: transform var(--transition-normal);
+            will-change: transform;
+        }
+
+        .project-card:hover .fluid-blob {
+            transform: scale(1.25) translate(var(--p-mouse-x, 0px), var(--p-mouse-y, 0px));
+        }
+
+        @keyframes morph-blob {
+            0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+            50% { border-radius: 40% 60% 70% 30% / 50% 50% 50% 50%; }
+            100% { border-radius: 70% 30% 50% 50% / 30% 70% 40% 60%; }
+        }
+
+        /* Chronos concentric rings */
+        .sync-ring {
+            position: absolute;
+            border: 1px solid rgba(41, 151, 255, 0.15);
+            border-radius: 50%;
+            transition: transform var(--transition-normal), border-color var(--transition-normal);
+            will-change: transform;
+        }
+        [data-theme="light"] .sync-ring {
+            border-color: rgba(0, 113, 227, 0.15);
+        }
+
+        .ring-1 {
+            width: 180px; height: 180px;
+            animation: rotate-ring 12s infinite linear;
+        }
+        .ring-2 {
+            width: 130px; height: 130px;
+            border-style: dashed;
+            animation: rotate-ring-reverse 8s infinite linear;
+        }
+        .ring-3 {
+            width: 80px; height: 80px;
+            background: radial-gradient(circle, rgba(41, 151, 255, 0.1) 0%, transparent 80%);
+        }
+
+        .project-card:hover .sync-ring {
+            border-color: rgba(41, 151, 255, 0.45);
+            transform: scale(1.1) translate(var(--p-mouse-x, 0px), var(--p-mouse-y, 0px));
+        }
+
+        @keyframes rotate-ring {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes rotate-ring-reverse {
+            from { transform: rotate(360deg); }
+            to { transform: rotate(0deg); }
+        }
+
+        /* Lumen Light Rays */
+        .light-ray {
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            background: radial-gradient(circle at var(--lumen-x, 50%) var(--lumen-y, 50%), var(--accent-glow) 0%, transparent 60%);
+            z-index: 2;
+            pointer-events: none;
+            transition: background 0.1s ease;
+        }
+
+        .light-emitter {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #ffffff;
+            filter: blur(15px);
+            opacity: 0.15;
+            z-index: 1;
+            transform: translate(0, 0);
+            transition: transform var(--transition-normal);
+            will-change: transform;
+        }
+
+        .project-card:hover .light-emitter {
+            transform: translate(var(--p-mouse-x, 0px), var(--p-mouse-y, 0px));
+            opacity: 0.35;
         }
 
         /* frosted glass overlay */
@@ -1373,6 +1630,11 @@
     </style>
 </head>
 <body>
+    <!-- CUSTOM LIQUID GOOEY CURSOR CONTAINER -->
+    <div class="cursor-container" id="cursor-container">
+        <div class="cursor-dot" id="cursor-dot"></div>
+        <div class="cursor-fluid" id="cursor-fluid"></div>
+    </div>
 
     <!-- SVG PHYSICAL LIQUID GLASS REFRACTION ENGINE -->
     <svg style="position: absolute; width: 0; height: 0; pointer-events: none;">
@@ -1386,6 +1648,13 @@
                 </feTurbulence>
                 <!-- displacementMap physically morphs pixel channels under the glass -->
                 <feDisplacementMap id="liquid-disp-map" in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+
+            <!-- SVG Liquid Gooey Filter for custom cursor -->
+            <filter id="gooey-cursor">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
+                <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8" result="goo" />
+                <feBlend in="SourceGraphic" in2="goo" />
             </filter>
         </defs>
     </svg>
@@ -1473,6 +1742,7 @@
                         <div class="glass-fluid-orb fo-1"></div>
                         <div class="glass-fluid-orb fo-2"></div>
                     </div>
+                    <div class="glass-shine-spotlight"></div>
                     
                     <h3>보이지 않는 디테일의 힘</h3>
                     <p>코드를 작성하는 매 순간, 인터페이스의 반응 속도와 픽셀의 정렬, 성능의 한계를 넘어선 매끄러움을 추구합니다. 보이지 않는 뒷면의 구조까지 정갈하게 짜여 있을 때 비로소 진정한 사용자 경험의 무결성이 완성된다고 확신합니다.</p>
@@ -1533,6 +1803,7 @@
                         <div class="glass-fluid-orb fo-1"></div>
                         <div class="glass-fluid-orb fo-2"></div>
                     </div>
+                    <div class="glass-shine-spotlight"></div>
                     <h3 class="skills-cat-title"><i class="fa-solid fa-wand-magic-sparkles"></i> 인터페이스 공학</h3>
                     <div class="skill-list">
                         <div class="skill-item">
@@ -1565,6 +1836,7 @@
                         <div class="glass-fluid-orb fo-1"></div>
                         <div class="glass-fluid-orb fo-2"></div>
                     </div>
+                    <div class="glass-shine-spotlight"></div>
                     <h3 class="skills-cat-title"><i class="fa-solid fa-bezier-curve"></i> 백엔드 아키텍처</h3>
                     <div class="skill-list">
                         <div class="skill-item">
@@ -1597,6 +1869,7 @@
                         <div class="glass-fluid-orb fo-1"></div>
                         <div class="glass-fluid-orb fo-2"></div>
                     </div>
+                    <div class="glass-shine-spotlight"></div>
                     <h3 class="skills-cat-title"><i class="fa-solid fa-eye"></i> 도구 & 크래프트</h3>
                     <div class="skill-list">
                         <div class="skill-item">
@@ -1648,8 +1921,9 @@
                 <!-- Project 1 (Aether UI) -->
                 <div class="project-card" data-category="frontend">
                     <div class="project-img-box">
-                        <div style="width:100%; height:100%; background: linear-gradient(135deg, #050508 0%, #15091a 100%); display:flex; justify-content:center; align-items:center; color: #a1a1a6;">
-                            <i class="fa-solid fa-compass-drafting fa-4x"></i>
+                        <div class="project-canvas canvas-aether">
+                            <div class="fluid-blob"></div>
+                            <i class="fa-solid fa-compass-drafting fa-3x iconic-label"></i>
                         </div>
                         <div class="project-overlay">
                             <a href="#" class="project-icon-btn" aria-label="깃허브 저장소"><i class="fa-brands fa-github"></i></a>
@@ -1674,8 +1948,11 @@
                 <!-- Project 2 (Chronos Engine) -->
                 <div class="project-card" data-category="fullstack">
                     <div class="project-img-box">
-                        <div style="width:100%; height:100%; background: linear-gradient(135deg, #070913 0%, #0d122e 100%); display:flex; justify-content:center; align-items:center; color: #a1a1a6;">
-                            <i class="fa-solid fa-microchip fa-4x"></i>
+                        <div class="project-canvas canvas-chronos">
+                            <div class="sync-ring ring-1"></div>
+                            <div class="sync-ring ring-2"></div>
+                            <div class="sync-ring ring-3"></div>
+                            <i class="fa-solid fa-microchip fa-3x iconic-label"></i>
                         </div>
                         <div class="project-overlay">
                             <a href="#" class="project-icon-btn" aria-label="깃허브 저장소"><i class="fa-brands fa-github"></i></a>
@@ -1700,8 +1977,10 @@
                 <!-- Project 3 (Lumen Studio) -->
                 <div class="project-card" data-category="others">
                     <div class="project-img-box">
-                        <div style="width:100%; height:100%; background: linear-gradient(135deg, #080c10 0%, #1a1e24 100%); display:flex; justify-content:center; align-items:center; color: #a1a1a6;">
-                            <i class="fa-solid fa-lightbulb fa-4x"></i>
+                        <div class="project-canvas canvas-lumen">
+                            <div class="light-ray"></div>
+                            <div class="light-emitter"></div>
+                            <i class="fa-solid fa-lightbulb fa-3x iconic-label"></i>
                         </div>
                         <div class="project-overlay">
                             <a href="#" class="project-icon-btn" aria-label="피그마 디자인 가이드"><i class="fa-brands fa-figma"></i></a>
@@ -1779,6 +2058,7 @@
                         <div class="glass-fluid-orb fo-1"></div>
                         <div class="glass-fluid-orb fo-2"></div>
                     </div>
+                    <div class="glass-shine-spotlight"></div>
                     
                     <form class="contact-form" id="contact-form" action="#" method="POST">
                         <div class="input-group">
@@ -1986,13 +2266,105 @@
             });
 
             // =======================================================
-            // 16. LIQUID GLASS PHYSICAL REFRACTION SPRING PHYSICS
+            // 16. LIQUID MERCURY CURSOR & SPRING PHYSICS ENGINE
             // =======================================================
+            const cursorContainer = document.getElementById('cursor-container');
+            const cursorDot = document.getElementById('cursor-dot');
+            const cursorFluid = document.getElementById('cursor-fluid');
+
+            let mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+            let pos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+            
+            let speed = 0;
+            let angle = 0;
+            let cursorScaleX = 1;
+            let cursorScaleY = 1;
+
+            let isMagnetic = false;
+            let snapTarget = null;
+
+            // Global mouse move listener
+            window.addEventListener('mousemove', (e) => {
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+            });
+
+            // Handle hoverable magnetic items
+            const updateInteractiveSelects = () => {
+                const interactiveElements = document.querySelectorAll('a, button, .project-card, .social-btn, .theme-btn, .menu-btn');
+                interactiveElements.forEach(el => {
+                    el.addEventListener('mouseenter', () => {
+                        isMagnetic = true;
+                        snapTarget = el;
+                        cursorContainer.classList.add('magnetic');
+                    });
+                    el.addEventListener('mouseleave', () => {
+                        isMagnetic = false;
+                        snapTarget = null;
+                        cursorContainer.classList.remove('magnetic');
+                    });
+                });
+            };
+            updateInteractiveSelects();
+
+            // Buttery-smooth animation loop updating displacement scale & cursor fluid at 60fps
             let currentScale = 0;
             let targetScale = 0;
             const springStrength = 0.12; // Spring interpolation rate
 
-            // Tracking the active card hover to warp sub-elements
+            function animateSystem() {
+                // 1. Physical Cursor animation
+                const dx = mouse.x - pos.x;
+                const dy = mouse.y - pos.y;
+                
+                const ease = isMagnetic ? 0.3 : 0.16; // Snappier snapping
+                pos.x += dx * ease;
+                pos.y += dy * ease;
+                
+                // Position tiny center dot exactly at cursor X/Y
+                cursorDot.style.transform = `translate3d(${mouse.x}px, ${mouse.y}px, 0)`;
+                
+                if (isMagnetic && snapTarget) {
+                    const rect = snapTarget.getBoundingClientRect();
+                    const targetX = rect.left + rect.width / 2;
+                    const targetY = rect.top + rect.height / 2;
+                    
+                    pos.x += (targetX - pos.x) * 0.3;
+                    pos.y += (targetY - pos.y) * 0.3;
+                    
+                    cursorFluid.style.width = `${rect.width + 12}px`;
+                    cursorFluid.style.height = `${rect.height + 8}px`;
+                    cursorFluid.style.borderRadius = window.getComputedStyle(snapTarget).borderRadius || '16px';
+                    cursorFluid.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0)`;
+                } else {
+                    const distMouse = Math.sqrt(dx * dx + dy * dy);
+                    speed += (distMouse - speed) * 0.15;
+                    angle = Math.atan2(dy, dx);
+                    
+                    const targetScaleY = Math.min(1 + speed * 0.012, 1.6);
+                    const targetScaleX = Math.max(1 - speed * 0.006, 0.65);
+                    
+                    cursorScaleX += (targetScaleX - cursorScaleX) * 0.2;
+                    cursorScaleY += (targetScaleY - cursorScaleY) * 0.2;
+                    
+                    cursorFluid.style.width = '32px';
+                    cursorFluid.style.height = '32px';
+                    cursorFluid.style.borderRadius = '50%';
+                    cursorFluid.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0) rotate(${angle}rad) scale(${cursorScaleY}, ${cursorScaleX})`;
+                }
+
+                // 2. Glass displacement filter updates
+                currentScale += (targetScale - currentScale) * springStrength;
+                const dispMap = document.getElementById('liquid-disp-map');
+                if (dispMap) {
+                    dispMap.setAttribute('scale', Math.round(currentScale * 100) / 100);
+                }
+
+                requestAnimationFrame(animateSystem);
+            }
+            requestAnimationFrame(animateSystem);
+
+            // Tracking the active card hover to warp sub-elements and spotlight
             const glassPanels = document.querySelectorAll('.glass-panel');
             
             glassPanels.forEach(panel => {
@@ -2001,41 +2373,112 @@
                 });
                 
                 panel.addEventListener('mousemove', (e) => {
-                    // Micro-shift fluid orbs under the cursor for volumetric parallax
                     const rect = panel.getBoundingClientRect();
-                    const x = e.clientX - rect.left - (rect.width / 2);
-                    const y = e.clientY - rect.top - (rect.height / 2);
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    // Update CSS variables for Dynamic spotlight shine
+                    panel.style.setProperty('--mouse-x', `${x}px`);
+                    panel.style.setProperty('--mouse-y', `${y}px`);
+                    
+                    // Micro-shift fluid orbs under the cursor for volumetric parallax
+                    const centerOffsetX = x - (rect.width / 2);
+                    const centerOffsetY = y - (rect.height / 2);
                     
                     const orbs = panel.querySelectorAll('.glass-fluid-orb');
                     orbs.forEach((orb, index) => {
                         const factor = (index + 1) * 0.08;
-                        orb.style.transform = `translate(${x * factor}px, ${y * factor}px)`;
+                        orb.style.transform = `translate3d(${centerOffsetX * factor}px, ${centerOffsetY * factor}px, 0)`;
                     });
+
+                    // 3D Glass Dome Refraction shift (opposite parallax offset)
+                    const fluidBg = panel.querySelector('.glass-fluid-bg');
+                    if (fluidBg) {
+                        fluidBg.style.transform = `translate3d(${-centerOffsetX * 0.03}px, ${-centerOffsetY * 0.03}px, 0)`;
+                    }
                 });
 
                 panel.addEventListener('mouseleave', () => {
                     targetScale = 0; // Return displacement map to flat plane
                     const orbs = panel.querySelectorAll('.glass-fluid-orb');
                     orbs.forEach(orb => {
-                        orb.style.transform = 'translate(0px, 0px)';
+                        orb.style.transform = 'translate3d(0px, 0px, 0)';
                     });
+                    const fluidBg = panel.querySelector('.glass-fluid-bg');
+                    if (fluidBg) {
+                        fluidBg.style.transform = 'translate3d(0px, 0px, 0)';
+                    }
                 });
             });
 
-            // Buttery-smooth animation loop updating displacement scale at 60fps
-            function animateDisplacement() {
-                // Spring calculation
-                currentScale += (targetScale - currentScale) * springStrength;
-                
-                const dispMap = document.getElementById('liquid-disp-map');
-                if (dispMap) {
-                    // Crucial: Set SVG attribute to trigger GPU refraction recalculation
-                    dispMap.setAttribute('scale', Math.round(currentScale * 100) / 100);
-                }
-                
-                requestAnimationFrame(animateDisplacement);
-            }
-            requestAnimationFrame(animateDisplacement);
+            // =======================================================
+            // 17. INTERACTIVE PROJECT CANVAS ENGINE
+            // =======================================================
+            const projectCardsInteractive = document.querySelectorAll('.project-card');
+            
+            projectCardsInteractive.forEach(card => {
+                card.addEventListener('mousemove', (e) => {
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    // Center offset values
+                    const centerOffsetX = x - (rect.width / 2);
+                    const centerOffsetY = y - (rect.height / 2);
+                    
+                    // Project 1: Aether Blob shifting
+                    const blob = card.querySelector('.fluid-blob');
+                    if (blob) {
+                        blob.style.setProperty('--p-mouse-x', `${centerOffsetX * 0.15}px`);
+                        blob.style.setProperty('--p-mouse-y', `${centerOffsetY * 0.15}px`);
+                    }
+                    
+                    // Project 2: Chronos sync rings shifting
+                    const rings = card.querySelectorAll('.sync-ring');
+                    rings.forEach((ring, index) => {
+                        const factor = (index + 1) * 0.06;
+                        ring.style.setProperty('--p-mouse-x', `${centerOffsetX * factor}px`);
+                        ring.style.setProperty('--p-mouse-y', `${centerOffsetY * factor}px`);
+                    });
+                    
+                    // Project 3: Lumen light tracking
+                    const lumenRay = card.querySelector('.light-ray');
+                    const emitter = card.querySelector('.light-emitter');
+                    if (lumenRay && emitter) {
+                        // Percent position mapping
+                        const pctX = (x / rect.width) * 100;
+                        const pctY = (y / rect.height) * 100;
+                        lumenRay.style.setProperty('--lumen-x', `${pctX}%`);
+                        lumenRay.style.setProperty('--lumen-y', `${pctY}%`);
+                        
+                        emitter.style.setProperty('--p-mouse-x', `${centerOffsetX * 0.22}px`);
+                        emitter.style.setProperty('--p-mouse-y', `${centerOffsetY * 0.22}px`);
+                    }
+                });
+
+                card.addEventListener('mouseleave', () => {
+                    const blob = card.querySelector('.fluid-blob');
+                    if (blob) {
+                        blob.style.setProperty('--p-mouse-x', '0px');
+                        blob.style.setProperty('--p-mouse-y', '0px');
+                    }
+                    
+                    const rings = card.querySelectorAll('.sync-ring');
+                    rings.forEach(ring => {
+                        ring.style.setProperty('--p-mouse-x', '0px');
+                        ring.style.setProperty('--p-mouse-y', '0px');
+                    });
+                    
+                    const lumenRay = card.querySelector('.light-ray');
+                    const emitter = card.querySelector('.light-emitter');
+                    if (lumenRay && emitter) {
+                        lumenRay.style.setProperty('--lumen-x', '50%');
+                        lumenRay.style.setProperty('--lumen-y', '50%');
+                        emitter.style.setProperty('--p-mouse-x', '0px');
+                        emitter.style.setProperty('--p-mouse-y', '0px');
+                    }
+                });
+            });
         });
     </script>
 </body>
