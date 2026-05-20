@@ -392,6 +392,29 @@
             transition: background var(--transition-fast), width var(--transition-fast), height var(--transition-fast), opacity var(--transition-fast);
         }
 
+        /* Interactive Liquid Glass 3D Particles */
+        .cursor-particle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--accent-light);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            will-change: transform, opacity;
+            opacity: 0.9;
+            pointer-events: none;
+            box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.4), 
+                        inset 2px 2px 4px rgba(255, 255, 255, 0.4), 
+                        0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        [data-theme="light"] .cursor-particle {
+            background: var(--accent);
+            box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.2), 
+                        inset 2px 2px 4px rgba(255, 255, 255, 0.6), 
+                        0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
         /* Magnetic snaps on hovering items */
         .cursor-container.magnetic {
             filter: none; /* Bypass gooey during snap for perfect sharpness */
@@ -2283,6 +2306,52 @@
             let isMagnetic = false;
             let snapTarget = null;
 
+            // Liquid glass particle physics system
+            const particles = [];
+
+            const spawnParticles = (x, y, count = 8, color = 'var(--accent)') => {
+                for (let i = 0; i < count; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'cursor-particle';
+                    
+                    const size = Math.random() * 10 + 6;
+                    particle.style.width = `${size}px`;
+                    particle.style.height = `${size}px`;
+                    
+                    const a = Math.random() * Math.PI * 2;
+                    const sp = Math.random() * 5 + 3;
+                    
+                    particle.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+                    
+                    if (document.documentElement.getAttribute('data-theme') === 'light') {
+                        particle.style.background = 'var(--accent)';
+                    } else {
+                        particle.style.background = 'var(--accent-light)';
+                    }
+                    
+                    cursorContainer.appendChild(particle);
+                    
+                    particles.push({
+                        el: particle,
+                        x: x,
+                        y: y,
+                        vx: Math.cos(a) * sp,
+                        vy: Math.sin(a) * sp,
+                        life: 1.0,
+                        decay: Math.random() * 0.035 + 0.015
+                    });
+                }
+            };
+
+            // Global click particle splash and heavy glass refraction wave
+            window.addEventListener('click', (e) => {
+                const color = document.documentElement.getAttribute('data-theme') === 'light' ? 'var(--accent)' : 'var(--accent-light)';
+                spawnParticles(e.clientX, e.clientY, 12, color);
+                
+                // Momentary heavy glass warp ripple on click
+                currentScale = 65;
+            });
+
             // Global mouse move listener
             window.addEventListener('mousemove', (e) => {
                 mouse.x = e.clientX;
@@ -2297,6 +2366,16 @@
                         isMagnetic = true;
                         snapTarget = el;
                         cursorContainer.classList.add('magnetic');
+
+                        // Hover Snap Pop: 6 liquid glass droplets burst from center
+                        const rect = el.getBoundingClientRect();
+                        const cx = rect.left + rect.width / 2;
+                        const cy = rect.top + rect.height / 2;
+                        const color = document.documentElement.getAttribute('data-theme') === 'light' ? 'var(--accent)' : 'var(--accent-light)';
+                        spawnParticles(cx, cy, 6, color);
+
+                        // Trigger momentary glass refraction shockwave
+                        currentScale = 45;
                     });
                     el.addEventListener('mouseleave', () => {
                         isMagnetic = false;
@@ -2321,8 +2400,8 @@
                 pos.x += dx * ease;
                 pos.y += dy * ease;
                 
-                // Position tiny center dot exactly at cursor X/Y
-                cursorDot.style.transform = `translate3d(${mouse.x}px, ${mouse.y}px, 0)`;
+                // Position tiny center dot exactly at cursor X/Y (centered with -50%, -50%)
+                cursorDot.style.transform = `translate3d(${mouse.x}px, ${mouse.y}px, 0) translate(-50%, -50%)`;
                 
                 if (isMagnetic && snapTarget) {
                     const rect = snapTarget.getBoundingClientRect();
@@ -2335,7 +2414,7 @@
                     cursorFluid.style.width = `${rect.width + 12}px`;
                     cursorFluid.style.height = `${rect.height + 8}px`;
                     cursorFluid.style.borderRadius = window.getComputedStyle(snapTarget).borderRadius || '16px';
-                    cursorFluid.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0)`;
+                    cursorFluid.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0) translate(-50%, -50%)`;
                 } else {
                     const distMouse = Math.sqrt(dx * dx + dy * dy);
                     speed += (distMouse - speed) * 0.15;
@@ -2350,7 +2429,28 @@
                     cursorFluid.style.width = '32px';
                     cursorFluid.style.height = '32px';
                     cursorFluid.style.borderRadius = '50%';
-                    cursorFluid.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0) rotate(${angle}rad) scale(${cursorScaleY}, ${cursorScaleX})`;
+                    cursorFluid.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0) translate(-50%, -50%) rotate(${angle}rad) scale(${cursorScaleY}, ${cursorScaleX})`;
+                }
+
+                // Update and animate liquid glass particles
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.life -= p.decay;
+                    
+                    if (p.life <= 0) {
+                        p.el.remove();
+                        particles.splice(i, 1);
+                        continue;
+                    }
+                    
+                    p.vx *= 0.93; // Friction
+                    p.vy *= 0.93;
+                    
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    
+                    p.el.style.opacity = p.life;
+                    p.el.style.transform = `translate3d(${p.x}px, ${p.y}px, 0) translate(-50%, -50%) scale(${p.life})`;
                 }
 
                 // 2. Glass displacement filter updates
